@@ -87,6 +87,8 @@ FNG_NAMES_RU = {
     "Extreme Greed": "Сильная жадность",
 }
 FNG_ALERT_ZONES = {"Extreme Fear", "Fear"}
+FNG_SHORT = {"Extreme Fear": "сил. страх", "Fear": "страх", "Neutral": "нейтр.",
+             "Greed": "жадность", "Extreme Greed": "сил. жадн."}
 FNG_EMOJI = {"Extreme Fear": "😱", "Fear": "😨", "Neutral": "😐", "Greed": "😏", "Extreme Greed": "🤑"}
 
 
@@ -262,6 +264,17 @@ def table(rows):
     rows = [(str(k), str(v)) for k, v in rows if v is not None]
     width = max(len(k) for k, _ in rows)
     return "<pre>" + "\n".join(esc(f"{k:<{width}}  {v}".rstrip()) for k, v in rows) + "</pre>"
+
+
+def grid_table(header, rows):
+    """Таблица из нескольких колонок в моноширинном блоке, с шапкой и разделителем."""
+    rows = [[str(c) for c in r] for r in rows]
+    n = len(header)
+    widths = [max(len(r[i]) for r in rows + [list(header)]) for i in range(n)]
+    def line(cells):
+        return "  ".join(c.ljust(w) for c, w in zip(cells, widths)).rstrip()
+    out = [line(header), line(["─" * w for w in widths])] + [line(r) for r in rows]
+    return "<pre>" + esc("\n".join(out)) + "</pre>"
 
 
 def card(title, rows=None):
@@ -513,63 +526,55 @@ def check_fear_greed(state, m, now):
 
 
 def summary_text(state, m, now, title=None):
-    """Сводка: строка с главным, короткая цитата и раскрывающаяся цитата с деталями."""
+    """Сводка: строка с ценой и таблица показателей."""
     prefix = f"{title}\n" if title else ""
     if "price" not in m:
-        return prefix + "📊 <b>BTC</b>: нет данных о цене"
+        return prefix + "<b>₿ BTC</b>: нет данных о цене"
     price = m["price"]
 
-    changes = {}
+    def pct(ref):
+        return fmt_pct((price - ref) / ref * 100)
+
+    rows = []
+    day = None
     if "hourly" in m:
         for hours in (24, 168):
             ch = change_over(m["hourly"], now, hours, price)
             if ch:
-                changes[hours] = ch[0]
-    head = f"📊 <b>BTC {fmt_usd(price)}</b>"
-    if 24 in changes:
-        head += f" · {fmt_pct(changes[24])} за сутки"
-
-    short, details = [], []
-    if 168 in changes:
-        details.append(f"За 7 дн: {fmt_pct(changes[168])}")
-    if "fng" in m:
-        value, zone, _ = m["fng"][0]
-        short.append(f"{FNG_EMOJI[zone]} {FNG_NAMES_RU[zone]} ({value})")
+                rows.append([period_name(hours), fmt_usd(ch[1]), fmt_pct(ch[0])])
+                if hours == 24:
+                    day = ch[0]
+    streak = 0
     if "daily" in m:
         depth, peak = drawdown(m["daily"], now, price)
-        details.append(f"Максимум {DRAWDOWN_DAYS} дн: {fmt_usd(peak)} ({fmt_pct(-depth)})")
+        rows.append([f"Макс {DRAWDOWN_DAYS} дн", fmt_usd(peak), fmt_pct(-depth)])
         ma = moving_average(m["daily"], MA_DAYS)
+        if ma:
+            rows.append(["MA200", fmt_usd(ma), pct(ma)])
         value = rsi(m["daily"])
         if value is not None:
-            short.append(f"RSI {value:.0f}")
-        if ma:
-            short.append("ниже MA200" if price < ma else "выше MA200")
-            details.append(f"MA200: {fmt_usd(ma)} ({fmt_pct((price - ma) / ma * 100)})")
-        if value is not None:
-            details.append(f"RSI({RSI_PERIOD}) дн: {value:.0f}")
+            note = "перепрод." if value < RSI_LOW else "перекуп." if value > 70 else ""
+            rows.append([f"RSI({RSI_PERIOD})", f"{value:.0f}", note])
     if "fng" in m:
         value, zone, _ = m["fng"][0]
+        rows.append(["Страх/жадн", value, FNG_SHORT[zone]])
         streak, _, _ = fear_streak(m["fng"])
-        line = f"Страх и жадность: {value}, «{FNG_NAMES_RU[zone]}»"
-        if streak > 1:
-            line += f", {streak} {days_word(streak)} в страхе"
-        details.append(line)
 
     levels = get_levels(state)
     above = [x for x in levels if x > price]
     below = [x for x in levels if x <= price]
     if above:
-        lv = min(above)
-        details.append(f"Уровень выше: {fmt_usd(lv)} ({fmt_pct((lv - price) / price * 100)})")
+        rows.append(["Ур. выше", fmt_usd(min(above)), fmt_pct((min(above) - price) / price * 100)])
     if below:
-        lv = max(below)
-        details.append(f"Уровень ниже: {fmt_usd(lv)} ({fmt_pct((lv - price) / price * 100)})")
+        rows.append(["Ур. ниже", fmt_usd(max(below)), fmt_pct((max(below) - price) / price * 100)])
 
-    text = prefix + head
-    if short:
-        text += "\n<blockquote>" + esc(" · ".join(short)) + "</blockquote>"
-    if details:
-        text += "<blockquote expandable>" + esc("\n".join(details)) + "</blockquote>"
+    text = prefix + f"<b>₿ {fmt_usd(price)}</b>"
+    if day is not None:
+        text += f" · {fmt_pct(day)} за сутки"
+    if rows:
+        text += "\n" + grid_table(["Показатель", "Значение", "Изм."], rows)
+    if streak > 1:
+        text += f"\n<i>Страх держится {streak} {days_word(streak)} подряд</i>"
     return text
 
 
