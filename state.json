@@ -1,1 +1,20 @@
-{}
+{
+  "tg_offset": 230827911,
+  "levels": [
+    78000.0,
+    70000.0,
+    60000.0
+  ],
+  "level_side": {
+    "78000": "above",
+    "70000": "above",
+    "60000": "above"
+  },
+  "slow": {},
+  "dd_step": 0,
+  "ma_side": "above",
+  "rsi_zone": "normal",
+  "fng_zone": "Neutral",
+  "fng_value": 48,
+  "summary_date": "2026-10-27"
+}
