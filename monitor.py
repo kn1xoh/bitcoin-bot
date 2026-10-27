@@ -87,6 +87,7 @@ FNG_NAMES_RU = {
     "Extreme Greed": "Сильная жадность",
 }
 FNG_ALERT_ZONES = {"Extreme Fear", "Fear"}
+FNG_EMOJI = {"Extreme Fear": "😱", "Fear": "😨", "Neutral": "😐", "Greed": "😏", "Extreme Greed": "🤑"}
 
 
 # ---------- Сеть ----------
@@ -118,7 +119,7 @@ def send_telegram(text):
         # Если Telegram не принял разметку — отправляем то же самое простым текстом
         print(f"HTML не отправился ({e}), шлю без разметки", file=sys.stderr)
         params.pop("parse_mode")
-        params["text"] = html.unescape(re.sub(r"</?(b|i|pre|code)>", "", text))
+        params["text"] = html.unescape(re.sub(r"</?(b|i|pre|code|blockquote)( expandable)?>", "", text))
         tg_api("sendMessage", params)
 
 
@@ -340,12 +341,12 @@ def check_fast(state, m, now):
 
     cooldown = COOLDOWN_MIN * 60
     if drop_pct <= -THRESHOLD_PCT and now - state.get("last_drop", 0) > cooldown:
-        alert(card(f"▼ Резкое падение {fmt_pct(drop_pct)} за {WINDOW_MIN} мин",
-                   [("Было", fmt_usd(high)), ("Сейчас", fmt_usd(current))]))
+        alert(f"🔻 <b>Резкое падение {fmt_pct(drop_pct)}</b> за {WINDOW_MIN} мин\n"
+              f"{fmt_usd(high)} → <b>{fmt_usd(current)}</b>")
         state["last_drop"] = int(now)
     if rise_pct >= THRESHOLD_PCT and now - state.get("last_rise", 0) > cooldown:
-        alert(card(f"▲ Резкий рост {fmt_pct(rise_pct)} за {WINDOW_MIN} мин",
-                   [("Было", fmt_usd(low)), ("Сейчас", fmt_usd(current))]))
+        alert(f"🚀 <b>Резкий рост {fmt_pct(rise_pct)}</b> за {WINDOW_MIN} мин\n"
+              f"{fmt_usd(low)} → <b>{fmt_usd(current)}</b>")
         state["last_rise"] = int(now)
 
 
@@ -362,12 +363,12 @@ def check_slow(state, m, now):
         print(f"За {period_name(hours)}: {change:+.2f}%")
         cooldown = hours * 3600 / 2
         if change <= -pct and now - slow.get(f"drop_{hours}", 0) > cooldown:
-            alert(card(f"▼ Падение {fmt_pct(change)} за {period_name(hours)}",
-                       [("Было", fmt_usd(ref)), ("Сейчас", fmt_usd(price))]))
+            alert(f"📉 <b>Падение {fmt_pct(change)}</b> за {period_name(hours)}\n"
+                  f"{fmt_usd(ref)} → <b>{fmt_usd(price)}</b>")
             slow[f"drop_{hours}"] = int(now)
         if change >= pct and now - slow.get(f"rise_{hours}", 0) > cooldown:
-            alert(card(f"▲ Рост {fmt_pct(change)} за {period_name(hours)}",
-                       [("Было", fmt_usd(ref)), ("Сейчас", fmt_usd(price))]))
+            alert(f"📈 <b>Рост {fmt_pct(change)}</b> за {period_name(hours)}\n"
+                  f"{fmt_usd(ref)} → <b>{fmt_usd(price)}</b>")
             slow[f"rise_{hours}"] = int(now)
 
 
@@ -395,13 +396,12 @@ def check_levels(state, m, now):
         elif side == "below" and price > level * (1 + buf):
             sides[key] = "above"
             up.append(level)
-    for crossed, arrow, word in ((sorted(down, reverse=True), "▼", "вниз"), (sorted(up), "▲", "вверх")):
+    for crossed, icon, word in ((sorted(down, reverse=True), "⬇️", "вниз"), (sorted(up), "⬆️", "вверх")):
         if not crossed:
             continue
-        title = f"{arrow} Пробой {'уровня' if len(crossed) == 1 else 'уровней'} {word}"
-        label = "Уровень" if len(crossed) == 1 else "Уровни"
-        rows = [(label if i == 0 else "", fmt_usd(x)) for i, x in enumerate(crossed)]
-        alert(card(title, rows + [("Сейчас", fmt_usd(price))]))
+        alert(f"{icon} <b>Пробой {'уровня' if len(crossed) == 1 else 'уровней'} {word}</b>\n"
+              + " · ".join(fmt_usd(x) for x in crossed)
+              + f"\nСейчас: <b>{fmt_usd(price)}</b>")
 
 
 def check_drawdown(state, m, now):
@@ -414,8 +414,8 @@ def check_drawdown(state, m, now):
     if stored is None:
         state["dd_step"] = reached
     elif reached > stored:
-        alert(card(f"▼ Просадка {fmt_pct(-depth)} от максимума за {DRAWDOWN_DAYS} дн",
-                   [("Максимум", fmt_usd(peak)), ("Сейчас", fmt_usd(m["price"]))]))
+        alert(f"🕳 <b>Просадка {fmt_pct(-depth)}</b> от максимума за {DRAWDOWN_DAYS} дн\n"
+              f"{fmt_usd(peak)} → <b>{fmt_usd(m['price'])}</b>")
         state["dd_step"] = reached
     elif reached < stored and depth < stored - DRAWDOWN_HYST:
         state["dd_step"] = reached
@@ -440,10 +440,9 @@ def check_tech(state, m, now):
             state["ma_side"] = new_side or ("above" if price >= ma else "below")
         elif new_side != side:
             state["ma_side"] = new_side
-            title = ("▼ Цена ушла ниже 200-дневной средней" if new_side == "below"
-                     else "▲ Цена вернулась выше 200-дневной средней")
-            alert(card(title, [("MA200", fmt_usd(ma)), ("Цена", fmt_usd(price)),
-                               ("Разница", fmt_pct((price - ma) / ma * 100))]))
+            title = "Цена ушла ниже MA200" if new_side == "below" else "Цена вернулась выше MA200"
+            alert(f"〰️ <b>{title}</b>\n"
+                  f"Средняя {fmt_usd(ma)}, цена <b>{fmt_usd(price)}</b> ({fmt_pct((price - ma) / ma * 100)})")
 
     value = rsi(daily)
     if value is not None:
@@ -453,12 +452,12 @@ def check_tech(state, m, now):
             state["rsi_zone"] = "oversold" if value < RSI_LOW else "normal"
         elif zone == "normal" and value < RSI_LOW:
             state["rsi_zone"] = "oversold"
-            alert(card(f"▼ Дневной RSI({RSI_PERIOD}): перепроданность",
-                       [("RSI", f"{value:.0f} (порог {RSI_LOW:g})"), ("Цена", fmt_usd(price))]))
+            alert(f"🧊 <b>RSI({RSI_PERIOD}): {value:.0f}</b>, перепроданность (ниже {RSI_LOW:g})\n"
+                  f"Цена: <b>{fmt_usd(price)}</b>")
         elif zone == "oversold" and value > RSI_EXIT:
             state["rsi_zone"] = "normal"
-            alert(card(f"▲ Дневной RSI({RSI_PERIOD}) вышел из перепроданности",
-                       [("RSI", f"{value:.0f} (выход выше {RSI_EXIT:g})"), ("Цена", fmt_usd(price))]))
+            alert(f"🌤 <b>RSI({RSI_PERIOD}): {value:.0f}</b>, выход из перепроданности\n"
+                  f"Цена: <b>{fmt_usd(price)}</b>")
 
 
 def check_fear_greed(state, m, now):
@@ -479,12 +478,16 @@ def check_fear_greed(state, m, now):
         elif prev in FNG_ALERT_ZONES and zone not in FNG_ALERT_ZONES:
             title = "Страх и жадность: выход из зоны страха"
         if title:
-            alert(card(title, [
-                ("Индекс", value),
-                ("Зона", FNG_NAMES_RU[zone]),
-                ("Было", FNG_NAMES_RU[prev] if prev in FNG_ZONES else None),
-                ("Цена BTC", fmt_usd(price) if price is not None else None),
-            ]))
+            if zone in FNG_ALERT_ZONES:
+                head = f"{FNG_EMOJI[zone]} <b>Индекс страха: {value}</b>"
+            else:
+                head = f"🙂 <b>Выход из страха: индекс {value}</b>"
+            text = f"{head}\nЗона «{FNG_NAMES_RU[zone]}»"
+            if prev in FNG_ZONES:
+                text += f", было «{FNG_NAMES_RU[prev]}»"
+            if price is not None:
+                text += f"\nЦена BTC: <b>{fmt_usd(price)}</b>"
+            alert(text)
         state["fng_zone"] = zone
     state["fng_value"] = value
 
@@ -499,64 +502,75 @@ def check_fear_greed(state, m, now):
         state["fng_streak"] = {"start": start, "reported": reached if info is None else 0}
         info = state["fng_streak"]
     if reached > info["reported"]:
-        alert(card(f"Страх держится {streak} {days_word(streak)} подряд", [
-            ("Индекс", value),
-            ("Зона", FNG_NAMES_RU[zone]),
-            ("Сильный страх", f"{extreme} {days_word(extreme)}" if extreme else None),
-            ("Цена BTC", fmt_usd(price) if price is not None else None),
-        ]))
+        text = (f"⏳ <b>Страх держится {streak} {days_word(streak)} подряд</b>\n"
+                f"Индекс {value}, «{FNG_NAMES_RU[zone]}»")
+        if extreme:
+            text += f" · в сильном страхе {extreme} {days_word(extreme)}"
+        if price is not None:
+            text += f"\nЦена BTC: <b>{fmt_usd(price)}</b>"
+        alert(text)
         info["reported"] = reached
 
 
-def summary_text(state, m, now, title):
+def summary_text(state, m, now, title=None):
+    """Сводка: строка с главным, короткая цитата и раскрывающаяся цитата с деталями."""
+    prefix = f"{title}\n" if title else ""
     if "price" not in m:
-        return card(title, [("Цена", "нет данных")])
+        return prefix + "📊 <b>BTC</b>: нет данных о цене"
     price = m["price"]
 
-    main_rows = [("Цена", fmt_usd(price))]
+    changes = {}
     if "hourly" in m:
         for hours in (24, 168):
             ch = change_over(m["hourly"], now, hours, price)
             if ch:
-                main_rows.append((f"За {period_name(hours)}", fmt_pct(ch[0])))
-    blocks = [card(title, main_rows)]
+                changes[hours] = ch[0]
+    head = f"📊 <b>BTC {fmt_usd(price)}</b>"
+    if 24 in changes:
+        head += f" · {fmt_pct(changes[24])} за сутки"
 
-    ind = []
-    if "daily" in m:
-        depth, peak = drawdown(m["daily"], now, price)
-        ind.append((f"Максимум {DRAWDOWN_DAYS} дн", fmt_usd(peak)))
-        ind.append(("От максимума", fmt_pct(-depth)))
-        ma = moving_average(m["daily"], MA_DAYS)
-        if ma:
-            ind.append(("MA200", fmt_usd(ma)))
-            ind.append(("Цена к MA200", fmt_pct((price - ma) / ma * 100)))
-        value = rsi(m["daily"])
-        if value is not None:
-            ind.append((f"RSI({RSI_PERIOD}) дн", f"{value:.0f}"))
+    short, details = [], []
+    if 168 in changes:
+        details.append(f"За 7 дн: {fmt_pct(changes[168])}")
     if "fng" in m:
         value, zone, _ = m["fng"][0]
-        ind.append(("Страх/жадность", f"{value}"))
-        ind.append(("Зона", FNG_NAMES_RU[zone]))
+        short.append(f"{FNG_EMOJI[zone]} {FNG_NAMES_RU[zone]} ({value})")
+    if "daily" in m:
+        depth, peak = drawdown(m["daily"], now, price)
+        details.append(f"Максимум {DRAWDOWN_DAYS} дн: {fmt_usd(peak)} ({fmt_pct(-depth)})")
+        ma = moving_average(m["daily"], MA_DAYS)
+        value = rsi(m["daily"])
+        if value is not None:
+            short.append(f"RSI {value:.0f}")
+        if ma:
+            short.append("ниже MA200" if price < ma else "выше MA200")
+            details.append(f"MA200: {fmt_usd(ma)} ({fmt_pct((price - ma) / ma * 100)})")
+        if value is not None:
+            details.append(f"RSI({RSI_PERIOD}) дн: {value:.0f}")
+    if "fng" in m:
+        value, zone, _ = m["fng"][0]
         streak, _, _ = fear_streak(m["fng"])
+        line = f"Страх и жадность: {value}, «{FNG_NAMES_RU[zone]}»"
         if streak > 1:
-            ind.append(("В страхе", f"{streak} {days_word(streak)} подряд"))
-    if ind:
-        blocks.append("<b>Индикаторы</b>\n" + table(ind))
+            line += f", {streak} {days_word(streak)} в страхе"
+        details.append(line)
 
     levels = get_levels(state)
     above = [x for x in levels if x > price]
     below = [x for x in levels if x <= price]
-    lv_rows = []
     if above:
         lv = min(above)
-        lv_rows.append(("Выше", f"{fmt_usd(lv)}  {fmt_pct((lv - price) / price * 100)}"))
+        details.append(f"Уровень выше: {fmt_usd(lv)} ({fmt_pct((lv - price) / price * 100)})")
     if below:
         lv = max(below)
-        lv_rows.append(("Ниже", f"{fmt_usd(lv)}  {fmt_pct((lv - price) / price * 100)}"))
-    if lv_rows:
-        blocks.append("<b>Ближайшие уровни</b>\n" + table(lv_rows))
+        details.append(f"Уровень ниже: {fmt_usd(lv)} ({fmt_pct((lv - price) / price * 100)})")
 
-    return "\n\n".join(blocks)
+    text = prefix + head
+    if short:
+        text += "\n<blockquote>" + esc(" · ".join(short)) + "</blockquote>"
+    if details:
+        text += "<blockquote expandable>" + esc("\n".join(details)) + "</blockquote>"
+    return text
 
 
 def check_summary(state, m, now):
@@ -564,7 +578,7 @@ def check_summary(state, m, now):
     today = local.date().isoformat()
     if local.hour < SUMMARY_HOUR or state.get("summary_date") == today or "price" not in m:
         return
-    send_telegram(summary_text(state, m, now, f"Сводка BTC на {local:%d.%m}"))
+    send_telegram(summary_text(state, m, now))
     state["summary_date"] = today
 
 
@@ -612,7 +626,7 @@ def handle_command(state, m, now, cmd, args):
     if cmd in ("/start", "/help"):
         return HELP
     if cmd == "/price":
-        return summary_text(state, m, now, "BTC сейчас")
+        return summary_text(state, m, now)
     if cmd == "/levels":
         return levels_text(state, m)
     if cmd in ("/add", "/del"):
@@ -689,7 +703,7 @@ def main():
     m = collect(now, errors)
 
     if TEST_MESSAGE:
-        send_telegram(summary_text(state, m, now, "Мониторинг BTC работает"))
+        send_telegram(summary_text(state, m, now, "✅ <b>Мониторинг BTC работает</b>"))
         print("Тестовое сообщение отправлено")
     else:
         steps = [check_fast, check_slow, check_levels, check_drawdown, check_tech,
