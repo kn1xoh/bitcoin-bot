@@ -28,23 +28,44 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Проверить цену и индекс страха и жадности
+      - name: Проверить рынок и команды
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TEST_MESSAGE: ${{ inputs.test }}
+          # Резкие движения
           THRESHOLD_PCT: "3"
-          WINDOW_MIN: "15"
+          WINDOW_MIN: "30"
           COOLDOWN_MIN: "30"
+          # Медленные движения: часы:процент
+          SLOW_RULES: "24:5,168:10"
+          # Начальные уровни (дальше — командами /add и /del в Telegram)
+          LEVELS: "60000,70000"
+          LEVEL_BUFFER_PCT: "0.3"
+          # Просадка от максимума
+          DRAWDOWN_DAYS: "90"
+          DRAWDOWN_STEPS: "15,20,30"
+          # 200-дневная средняя и RSI
+          TECH_ALERTS: "true"
+          RSI_LOW: "30"
+          RSI_EXIT: "35"
+          # Индекс страха и жадности
           FNG_ALERTS: "true"
+          FEAR_STREAK_DAYS: "3,7,14,30"
+          # Сводка: час по местному времени и смещение от UTC (Москва = 3)
+          SUMMARY_HOUR: "9"
+          TZ_OFFSET: "3"
+          COMMANDS: "true"
         run: python monitor.py
 
-      - name: Сохранить состояние (время последних уведомлений)
+      - name: Сохранить состояние
+        if: always()
         run: |
           if [ -n "$(git status --porcelain state.json)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add state.json
             git commit -m "Update alert state"
+            git pull --rebase
             git push
           fi
