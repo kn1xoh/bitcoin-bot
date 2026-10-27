@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Проверить цену
+      - name: Проверить цену и индекс страха и жадности
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -36,6 +36,7 @@ jobs:
           THRESHOLD_PCT: "3"
           WINDOW_MIN: "15"
           COOLDOWN_MIN: "30"
+          FNG_ALERTS: "true"
         run: python monitor.py
 
       - name: Сохранить состояние (время последних уведомлений)
