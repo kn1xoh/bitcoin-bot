@@ -6,7 +6,7 @@
     60000.0
   ],
   "level_side": {
-    "78000": "above",
+    "78000": "below",
     "70000": "above",
     "60000": "above"
   },
@@ -14,7 +14,11 @@
   "dd_step": 0,
   "ma_side": "above",
   "rsi_zone": "normal",
-  "fng_zone": "Neutral",
-  "fng_value": 51,
-  "summary_date": "2026-10-29"
+  "fng_zone": "Fear",
+  "fng_value": 30,
+  "summary_date": "2026-10-29",
+  "fng_streak": {
+    "start": 1793318400,
+    "reported": 0
+  }
 }
