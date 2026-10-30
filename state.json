@@ -1,5 +1,5 @@
 {
-  "tg_offset": 230827911,
+  "tg_offset": 230827912,
   "levels": [
     78000.0,
     70000.0,
@@ -16,7 +16,7 @@
   "rsi_zone": "normal",
   "fng_zone": "Fear",
   "fng_value": 30,
-  "summary_date": "2026-10-29",
+  "summary_date": "2026-10-30",
   "fng_streak": {
     "start": 1793318400,
     "reported": 0
