@@ -10,7 +10,9 @@
     "70000": "above",
     "60000": "above"
   },
-  "slow": {},
+  "slow": {
+    "drop_24": 1793916811
+  },
   "dd_step": 0,
   "ma_side": "above",
   "rsi_zone": "normal",
