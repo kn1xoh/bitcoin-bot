@@ -14,11 +14,7 @@
   "dd_step": 0,
   "ma_side": "above",
   "rsi_zone": "normal",
-  "fng_zone": "Fear",
-  "fng_value": 34,
-  "summary_date": "2026-11-04",
-  "fng_streak": {
-    "start": 1793318400,
-    "reported": 3
-  }
+  "fng_zone": "Neutral",
+  "fng_value": 50,
+  "summary_date": "2026-11-04"
 }
