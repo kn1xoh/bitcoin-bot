@@ -16,7 +16,11 @@
   "dd_step": 0,
   "ma_side": "above",
   "rsi_zone": "normal",
-  "fng_zone": "Neutral",
-  "fng_value": 50,
-  "summary_date": "2026-11-05"
+  "fng_zone": "Fear",
+  "fng_value": 28,
+  "summary_date": "2026-11-05",
+  "fng_streak": {
+    "start": 1793923200,
+    "reported": 0
+  }
 }
