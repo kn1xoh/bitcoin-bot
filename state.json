@@ -13,12 +13,12 @@
   "slow": {
     "drop_24": 1793916811
   },
-  "dd_step": 0,
+  "dd_step": 15.0,
   "ma_side": "above",
   "rsi_zone": "normal",
   "fng_zone": "Fear",
   "fng_value": 29,
-  "summary_date": "2026-11-08",
+  "summary_date": "2026-11-09",
   "fng_streak": {
     "start": 1793923200,
     "reported": 3
