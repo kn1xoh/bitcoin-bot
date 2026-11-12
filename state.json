@@ -17,10 +17,10 @@
   "ma_side": "above",
   "rsi_zone": "normal",
   "fng_zone": "Fear",
-  "fng_value": 29,
+  "fng_value": 28,
   "summary_date": "2026-11-11",
   "fng_streak": {
     "start": 1793923200,
-    "reported": 3
+    "reported": 7
   }
 }
