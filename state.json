@@ -14,8 +14,8 @@
     "drop_24": 1793916811
   },
   "dd_step": 15.0,
-  "ma_side": "above",
-  "rsi_zone": "normal",
+  "ma_side": "below",
+  "rsi_zone": "oversold",
   "fng_zone": "Fear",
   "fng_value": 28,
   "summary_date": "2026-11-12",
