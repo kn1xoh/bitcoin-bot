@@ -16,8 +16,8 @@
   "dd_step": 15.0,
   "ma_side": "below",
   "rsi_zone": "oversold",
-  "fng_zone": "Fear",
-  "fng_value": 28,
+  "fng_zone": "Extreme Fear",
+  "fng_value": 20,
   "summary_date": "2026-11-12",
   "fng_streak": {
     "start": 1793923200,
