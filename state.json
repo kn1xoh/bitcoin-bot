@@ -8,13 +8,13 @@
   "level_side": {
     "78000": "below",
     "70000": "below",
-    "60000": "above"
+    "60000": "below"
   },
   "slow": {
-    "drop_24": 1794684110,
+    "drop_24": 1795196776,
     "drop_168": 1794959989
   },
-  "dd_step": 20.0,
+  "dd_step": 30.0,
   "ma_side": "below",
   "rsi_zone": "oversold",
   "fng_zone": "Extreme Fear",
