@@ -8,7 +8,7 @@
   "level_side": {
     "78000": "below",
     "70000": "below",
-    "60000": "below"
+    "60000": "above"
   },
   "slow": {
     "drop_24": 1795263934,
