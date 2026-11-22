@@ -8,18 +8,19 @@
   "level_side": {
     "78000": "below",
     "70000": "below",
-    "60000": "below"
+    "60000": "above"
   },
   "slow": {
     "drop_24": 1795263934,
-    "drop_168": 1795263934
+    "drop_168": 1795263934,
+    "rise_24": 1795348357
   },
   "dd_step": 30.0,
   "ma_side": "below",
   "rsi_zone": "oversold",
   "fng_zone": "Extreme Fear",
   "fng_value": 11,
-  "summary_date": "2026-11-21",
+  "summary_date": "2026-11-22",
   "fng_streak": {
     "start": 1793923200,
     "reported": 14
