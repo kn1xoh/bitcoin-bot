@@ -17,12 +17,13 @@
   },
   "dd_step": 30.0,
   "ma_side": "below",
-  "rsi_zone": "oversold",
+  "rsi_zone": "normal",
   "fng_zone": "Extreme Fear",
   "fng_value": 11,
-  "summary_date": "2026-11-22",
+  "summary_date": "2026-11-23",
   "fng_streak": {
     "start": 1793923200,
     "reported": 14
-  }
+  },
+  "last_rise": 1795443720
 }
