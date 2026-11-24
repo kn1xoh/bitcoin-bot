@@ -17,7 +17,7 @@
   },
   "dd_step": 30.0,
   "ma_side": "below",
-  "rsi_zone": "normal",
+  "rsi_zone": "oversold",
   "fng_zone": "Extreme Fear",
   "fng_value": 11,
   "summary_date": "2026-11-23",
